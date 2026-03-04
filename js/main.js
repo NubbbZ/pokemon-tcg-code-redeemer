@@ -84,9 +84,7 @@ function drawCodes() {
 
 function getRecentRow(scannedCode) {
     var row = $('<tr>')
-        .append($('<td>', { html: scannedCode.code }))
-        .append($('<td>', { html: getDateAsDisplayString(scannedCode.scanned) }));
-
+        .append($('<td>', { html: scannedCode.code }));
     $(row).on('click', function () {
         copyAndMarkCode(scannedCode.code);
     });
@@ -120,16 +118,10 @@ function getFullRow(scannedCode, position) {
 
 function copyAllCodesToClipboard() {
     var codes = "";
-    var seperator = "\t";
     var newLine = "\n"
 
     for (var i = 0; i < scannedCodes.length; i++) {
-        codes += scannedCodes[i].code + seperator;
-        codes += scannedCodes[i].scanned + seperator;
-        codes += scannedCodes[i].copied + seperator;
-        codes += scannedCodes[i].scanCount + seperator;
-        codes += scannedCodes[i].copyCount + seperator;
-        codes += newLine;
+        codes += scannedCodes[i].code + newLine;
     }
 
     navigator.clipboard.writeText(codes);
