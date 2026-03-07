@@ -41,7 +41,19 @@ function run() {
     });
 }
 
+function sanitizeCode(code) {
+    // strip the pokemon redeem URL prefix if present
+    var prefix = "https://pokemon.com/redeem?2d_code=";
+    if (code && code.indexOf(prefix) === 0) {
+        return code.substring(prefix.length);
+    }
+    return code;
+}
+
 function addNewCode(code) {
+    // normalize incoming codes before work
+    code = sanitizeCode(code);
+
     var position = scannedCodes.indexOf(scannedCodes.filter(function (val) {
         return val.code === code;
     })[0]);
