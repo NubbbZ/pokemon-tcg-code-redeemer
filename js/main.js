@@ -1,5 +1,6 @@
-var scannedCodes = [];
-var lastCode = "";
+const STORAGE_KEY = 'pokemon_tcg_codes';
+let scannedCodes = [];
+let lastCode = "";
 
 // To enforce the use of the new api with detailed scan results, call the constructor with an options object, see below.
 const scanner = new QrScanner(
@@ -9,18 +10,18 @@ const scanner = new QrScanner(
 );
 
 function run() {
-    scanner.start().then(() => {
-        // List cameras after the scanner started to avoid listCamera's stream and the scanner's stream being requested
-        // at the same time which can result in listCamera's unconstrained stream also being offered to the scanner.
-        // Note that we can also start the scanner after listCameras, we just have it this way around in the demo to
-        // start the scanner earlier.
-        QrScanner.listCameras(true).then(cameras => cameras.forEach(camera => {
-            const option = document.createElement('option');
-            option.value = camera.id;
-            option.text = camera.label;
-            $('#cam-list').append(option);
-        }));
-    });
+    scanner.start()
+        .then(() => {
+            QrScanner.listCameras(true).then(cameras => cameras.forEach(camera => {
+                const option = document.createElement('option');
+                option.value = camera.id;
+                option.text = camera.label;
+                $('#cam-list').append(option);
+            }));
+        })
+        .catch(err => {
+            postUpdate("Failed to start camera: " + err);
+        });
 
     $('#cam-list').on('change', function (event) {
         scanner.setCamera(event.target.value);
@@ -39,11 +40,21 @@ function run() {
 
         importCodesFromClipboard();
     });
+
+    $('.clear-codes').on('click', function (e) {
+        e.preventDefault();
+
+        if (confirm('Are you sure you want to clear all codes?')) {
+            scannedCodes = [];
+            saveCodes();
+            drawCodes();
+            postUpdate("All codes have been cleared");
+        }
+    });
 }
 
 function sanitizeCode(code) {
-    // strip the pokemon redeem URL prefix if present
-    var prefix = "https://pokemon.com/redeem?2d_code=";
+    const prefix = "https://pokemon.com/redeem?2d_code=";
     if (code && code.indexOf(prefix) === 0) {
         return code.substring(prefix.length);
     }
@@ -51,14 +62,11 @@ function sanitizeCode(code) {
 }
 
 function addNewCode(code) {
-    // normalize incoming codes before work
     code = sanitizeCode(code);
 
-    var position = scannedCodes.indexOf(scannedCodes.filter(function (val) {
-        return val.code === code;
-    })[0]);
+    const position = scannedCodes.findIndex(val => val.code === code);
 
-    if (position > -1 && lastCode == code) {
+    if (position > -1 && lastCode === code) {
         return;
     }
     else if (position > -1) {
@@ -76,8 +84,9 @@ function addNewCode(code) {
         lastCode = code;
     }
 
-    scannedCodes.splice(0, 0, { code: code, scanned: Date(), copied: false, scanCount: 1, copyCount: 0 });
+    scannedCodes.splice(0, 0, { code: code, scanned: new Date().toISOString(), copied: false, scanCount: 1, copyCount: 0 });
 
+    saveCodes();
     drawCodes();
 }
 
@@ -85,57 +94,46 @@ function drawCodes() {
     $('.recent-body').html('');
     $('.full-body').html('');
 
-    for (var i = 0; i < Math.min(scannedCodes.length, 6); i++) {
+    for (let i = 0; i < Math.min(scannedCodes.length, 6); i++) {
         $('.recent-body').append($(getRecentRow(scannedCodes[i])));
     }
 
-    for (var i = 0; i < scannedCodes.length; i++) {
+    for (let i = 0; i < scannedCodes.length; i++) {
         $('.full-body').append($(getFullRow(scannedCodes[i], i + 1)));
     }
 }
 
 function getRecentRow(scannedCode) {
-    var row = $('<tr>')
-        .append($('<td>', { html: scannedCode.code }));
-    $(row).on('click', function () {
+    const row = $('<tr>')
+        .append($('<td>').text(scannedCode.code));
+    row.on('click', function () {
         copyAndMarkCode(scannedCode.code);
     });
 
-    return $(row);
+    return row;
 }
 
 function getFullRow(scannedCode, position) {
-    var copiedClass = "fa-check";
-    var rowCopiedClass = "copied";
+    const copiedClass = scannedCode.copied ? "fa-check" : "fa-times";
+    const rowCopiedClass = scannedCode.copied ? "copied" : "";
 
-    if (!scannedCode.copied) {
-        copiedClass = "fa-times";
-        rowCopiedClass = "";
-    }
-
-    var row = $('<tr>', { class: rowCopiedClass })
-        .append($('<td>', { class: "d-none d-md-table-cell", html: position }))
-        .append($('<td>', { html: scannedCode.code }))
-        .append($('<td>', { class: "d-none d-md-table-cell", html: getDateAsDisplayString(scannedCode.scanned) }))
+    const row = $('<tr>', { class: rowCopiedClass })
+        .append($('<td>', { class: "d-none d-md-table-cell" }).text(position))
+        .append($('<td>').text(scannedCode.code))
+        .append($('<td>', { class: "d-none d-md-table-cell" }).text(getDateAsDisplayString(scannedCode.scanned)))
         .append($('<td>')
             .append($('<i>', { class: "fa-solid " + copiedClass }))
         );
 
-    $(row).on('click', function () {
+    row.on('click', function () {
         copyAndMarkCode(scannedCode.code);
     });
 
-    return $(row);
+    return row;
 }
 
 function copyAllCodesToClipboard() {
-    var codes = "";
-    var newLine = "\n"
-
-    for (var i = 0; i < scannedCodes.length; i++) {
-        codes += scannedCodes[i].code + newLine;
-    }
-
+    const codes = scannedCodes.map(c => c.code).join('\n');
     navigator.clipboard.writeText(codes);
 }
 
@@ -144,49 +142,47 @@ function importCodesFromClipboard() {
     .then(clipboardContent => {
         scannedCodes = [];
 
-        var lines = clipboardContent.split(/\r|\n/).filter(n => n);
-        for (var i = 0; i < lines.length; i++) {
-            var cells = lines[i].split('\t');
+        const lines = clipboardContent.split(/\r|\n/).filter(n => n);
+        for (let i = 0; i < lines.length; i++) {
+            const cells = lines[i].split('\t');
     
-            var newCode = {};
-            for (var c = 0; c < cells.length; c++) {
-                if (c == 0) {
+            const newCode = {};
+            for (let c = 0; c < cells.length; c++) {
+                if (c === 0) {
                     newCode.code = cells[c];
                 }
-                if (c == 1) {
+                if (c === 1) {
                     newCode.scanned = cells[c];
                 }
-                if (c == 2) {
+                if (c === 2) {
                     newCode.copied = cells[c] === 'true';
                 }
-                if (c == 3) {
-                    newCode.scanCount = cells[c];
+                if (c === 3) {
+                    newCode.scanCount = parseInt(cells[c], 10);
                 }
-                if (c == 4) {
-                    newCode.copyCount = cells[c];
+                if (c === 4) {
+                    newCode.copyCount = parseInt(cells[c], 10);
                 }
             }
 
             scannedCodes.push(newCode);
         }
 
+        saveCodes();
         drawCodes();
         postUpdate("Your codes have been imported");
     })
-    .catch(err => {
+    .catch(() => {
         postUpdate("Failed to read clipboard contents");
     });
-}
-
-function cleanImportText(text) {
-    return text.trim
 }
 
 function copyAndMarkCode(code) {
     navigator.clipboard.writeText(code);
 
-    var copyCount = markCodeAsCopied(code);
+    const copyCount = markCodeAsCopied(code);
 
+    saveCodes();
     drawCodes();
 
     if (copyCount > 1) {
@@ -198,9 +194,7 @@ function copyAndMarkCode(code) {
 }
 
 function markCodeAsCopied(code) {
-    var position = scannedCodes.indexOf(scannedCodes.filter(function (val) {
-        return val.code === code;
-    })[0]);
+    const position = scannedCodes.findIndex(val => val.code === code);
 
     scannedCodes[position].copied = true;
     scannedCodes[position].copyCount++;
@@ -217,19 +211,35 @@ function postUpdate(update) {
 }
 
 function getDateAsDisplayString(date) {
-    var dateAsDate = new Date(date);
+    const dateAsDate = new Date(date);
 
-    var timeString = dateAsDate.getHours() + ":" + dateAsDate.getMinutes();
-    var dateString = dateAsDate.getDay() + "/" + dateAsDate.getMonth() + "/" + dateAsDate.getFullYear();
+    const timeString = dateAsDate.getHours() + ":" + String(dateAsDate.getMinutes()).padStart(2, '0');
+    const dateString = dateAsDate.getDate() + "/" + (dateAsDate.getMonth() + 1) + "/" + dateAsDate.getFullYear();
 
     return timeString + " " + dateString;
 }
 
-$(document).ready(function () {
-    run();
+function saveCodes() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(scannedCodes));
+    } catch (e) {
+        console.warn('Could not save codes to localStorage:', e);
+    }
+}
 
-    //Debug
-    //for (var i = 1; i < 20; i++) {
-    //    addNewCode("Test " + i);
-    //}
+function loadCodes() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            scannedCodes = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.warn('Could not load codes from localStorage:', e);
+    }
+}
+
+$(document).ready(function () {
+    loadCodes();
+    drawCodes();
+    run();
 });

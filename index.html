@@ -32,7 +32,7 @@
         </a>
       </div>
       <div class="header-info-box d-flex justify-content-center align-items-center">
-        <p class="header-updates">Updates will appear here</p>
+        <p class="header-updates" aria-live="polite">Updates will appear here</p>
       </div>
     </header>
 
@@ -42,9 +42,10 @@
           <div class="card">
             <div class="card-header">Camera</div>
             <div class="card-body">
-              <video id="qr-code-viewer" class="w-100"></video>
+              <video id="qr-code-viewer" class="w-100" aria-label="QR Code scanner video feed"></video>
               <div class="camera-selector">
-                <select id="cam-list">
+                <label for="cam-list" class="visually-hidden">Select camera</label>
+                <select id="cam-list" aria-label="Select camera">
                   <option value="environment" selected>Environment Facing (default)</option>
                   <option value="user">User Facing</option>
                 </select>
@@ -76,8 +77,9 @@
                   <span>Codes</span>
                 </div>
                 <div class="col-12 col-md-8">
-                  <a class="btn btn-sm btn-primary copy-to-clipboard float-end ms-0 ms-md-3" href="#">Copy to Clipboard</a>
-                  <a class="btn btn-sm btn-primary import-from-clipboard float-start float-md-end" href="#">Import from Clipboard</a>
+                  <a class="btn btn-sm btn-primary copy-to-clipboard float-end ms-0 ms-md-3" href="#" role="button">Copy to Clipboard</a>
+                  <a class="btn btn-sm btn-primary import-from-clipboard float-start float-md-end" href="#" role="button">Import from Clipboard</a>
+                  <button class="btn btn-sm btn-danger float-start float-md-end me-0 me-md-2 clear-codes">Clear All</button>
                 </div>
               </div>
             </div>
