@@ -98,11 +98,6 @@ footer:before {
     color: white;
 }
 
-.copied,
-.table-striped>tbody>tr.copied:nth-of-type(odd)>* {
-    background-color: #b20607;
-}
-
 .delete-code {
     padding: 0.25rem 0.5rem;
 }

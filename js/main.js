@@ -27,17 +27,12 @@ function run() {
         scanner.setCamera(event.target.value);
     });
 
-    $('.copy-to-clipboard').on('click', function (e) {
-        e.preventDefault();
-
+    $('.copy-to-clipboard').on('click', function () {
         copyAllCodesToClipboard();
-
         postUpdate("All codes have been copied to your clipboard");
     });
 
-    $('.import-from-clipboard').on('click', function (e) {
-        e.preventDefault();
-
+    $('.import-from-clipboard').on('click', function () {
         importCodesFromClipboard();
     });
 
@@ -94,7 +89,7 @@ function addNewCode(code) {
         lastCode = code;
     }
 
-    scannedCodes.splice(0, 0, { code: code, scanned: new Date().toISOString(), copied: false, scanCount: 1, copyCount: 0 });
+    scannedCodes.splice(0, 0, { code: code, scanned: new Date().toISOString(), scanCount: 1 });
 
     saveCodes();
     drawCodes();
@@ -114,36 +109,17 @@ function drawCodes() {
 }
 
 function getRecentRow(scannedCode) {
-    const row = $('<tr>')
+    return $('<tr>')
         .append($('<td>').text(scannedCode.code));
-    row.on('click', function () {
-        copyAndMarkCode(scannedCode.code);
-    });
-
-    return row;
 }
 
 function getFullRow(scannedCode, position) {
-    const copiedClass = scannedCode.copied ? "fa-check" : "fa-times";
-    const rowCopiedClass = scannedCode.copied ? "copied" : "";
-
-    const row = $('<tr>', { class: rowCopiedClass })
+    return $('<tr>')
         .append($('<td>', { class: "d-none d-md-table-cell" }).text(position))
         .append($('<td>').text(scannedCode.code))
-        .append($('<td>', { class: "d-none d-md-table-cell" })
-            .append($('<i>', { class: "fa-solid " + copiedClass }))
-        )
         .append($('<td>')
             .append($('<i>', { class: "fa-solid fa-trash delete-code text-danger", "data-code": scannedCode.code, style: "cursor: pointer;" }))
         );
-
-    row.on('click', function (e) {
-        if (!$(e.target).closest('.delete-code').length) {
-            copyAndMarkCode(scannedCode.code);
-        }
-    });
-
-    return row;
 }
 
 function copyAllCodesToClipboard() {
@@ -158,28 +134,7 @@ function importCodesFromClipboard() {
 
         const lines = clipboardContent.split(/\r|\n/).filter(n => n);
         for (let i = 0; i < lines.length; i++) {
-            const cells = lines[i].split('\t');
-    
-            const newCode = {};
-            for (let c = 0; c < cells.length; c++) {
-                if (c === 0) {
-                    newCode.code = cells[c];
-                }
-                if (c === 1) {
-                    newCode.scanned = cells[c];
-                }
-                if (c === 2) {
-                    newCode.copied = cells[c] === 'true';
-                }
-                if (c === 3) {
-                    newCode.scanCount = parseInt(cells[c], 10);
-                }
-                if (c === 4) {
-                    newCode.copyCount = parseInt(cells[c], 10);
-                }
-            }
-
-            scannedCodes.push(newCode);
+            scannedCodes.push({ code: lines[i].trim(), scanned: new Date().toISOString(), scanCount: 1 });
         }
 
         saveCodes();
@@ -189,31 +144,6 @@ function importCodesFromClipboard() {
     .catch(() => {
         postUpdate("Failed to read clipboard contents");
     });
-}
-
-function copyAndMarkCode(code) {
-    navigator.clipboard.writeText(code);
-
-    const copyCount = markCodeAsCopied(code);
-
-    saveCodes();
-    drawCodes();
-
-    if (copyCount > 1) {
-        postUpdate(code + " has already been copied " + copyCount + " times");
-    }
-    else {
-        postUpdate(code + " copied to clipboard");
-    }
-}
-
-function markCodeAsCopied(code) {
-    const position = scannedCodes.findIndex(val => val.code === code);
-
-    scannedCodes[position].copied = true;
-    scannedCodes[position].copyCount++;
-
-    return scannedCodes[position].copyCount;
 }
 
 function postUpdate(update) {
