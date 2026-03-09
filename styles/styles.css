@@ -10,9 +10,6 @@ body {
     background-color: black;
     color: #c8c4bd;
 }
-.header-container {
-    background-color: black;
-}
 header:after {
     content: ' ';
     height: 0.25rem;
@@ -22,25 +19,8 @@ header:after {
     float: left;
 }
 
-footer {
-    color: white;
-}
-.footer-container {
-    background-color: rgb(30, 32, 33);
-    text-align: center;
-    padding: 2rem;
-}
-footer:before {
-    content: ' ';
-    height: 0.25rem;
-    width: 100%;
-    background: rgb(222,181,86);
-    background: linear-gradient(90deg, #cf953e 0%, #fad692 50%, #cf953e 100%);
-    float: left;
-}
-
 .header-info-box {
-    height: 75px;
+    height: 2rem;
     border-top: solid 0.1rem rgb(57, 62, 64);
     background-color: rgb(30, 32, 33);
     color: white;
