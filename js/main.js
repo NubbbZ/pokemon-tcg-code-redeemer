@@ -51,6 +51,16 @@ function run() {
             postUpdate("All codes have been cleared");
         }
     });
+
+    $(document).on('click', '.delete-code', function (e) {
+        e.preventDefault();
+
+        const code = $(this).data('code');
+        scannedCodes = scannedCodes.filter(c => c.code !== code);
+        saveCodes();
+        drawCodes();
+        postUpdate(code + " has been removed");
+    });
 }
 
 function sanitizeCode(code) {
@@ -120,13 +130,17 @@ function getFullRow(scannedCode, position) {
     const row = $('<tr>', { class: rowCopiedClass })
         .append($('<td>', { class: "d-none d-md-table-cell" }).text(position))
         .append($('<td>').text(scannedCode.code))
-        .append($('<td>', { class: "d-none d-md-table-cell" }).text(getDateAsDisplayString(scannedCode.scanned)))
-        .append($('<td>')
+        .append($('<td>', { class: "d-none d-md-table-cell" })
             .append($('<i>', { class: "fa-solid " + copiedClass }))
+        )
+        .append($('<td>')
+            .append($('<i>', { class: "fa-solid fa-trash delete-code text-danger", "data-code": scannedCode.code, style: "cursor: pointer;" }))
         );
 
-    row.on('click', function () {
-        copyAndMarkCode(scannedCode.code);
+    row.on('click', function (e) {
+        if (!$(e.target).closest('.delete-code').length) {
+            copyAndMarkCode(scannedCode.code);
+        }
     });
 
     return row;
@@ -208,15 +222,6 @@ function postUpdate(update) {
 
         $('.header-updates').fadeIn(1000);
     });
-}
-
-function getDateAsDisplayString(date) {
-    const dateAsDate = new Date(date);
-
-    const timeString = dateAsDate.getHours() + ":" + String(dateAsDate.getMinutes()).padStart(2, '0');
-    const dateString = dateAsDate.getDate() + "/" + (dateAsDate.getMonth() + 1) + "/" + dateAsDate.getFullYear();
-
-    return timeString + " " + dateString;
 }
 
 function saveCodes() {
