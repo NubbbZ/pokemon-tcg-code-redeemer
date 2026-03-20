@@ -75,9 +75,7 @@ function addNewCode(code) {
         return;
     }
     else if (position > -1) {
-        scannedCodes[position].scanCount++;
-
-        postUpdate(code + " has already been scanned " + scannedCodes[position].scanCount + " times");
+        postUpdate(code + " has already been scanned");
 
         lastCode = code;
 
@@ -89,7 +87,7 @@ function addNewCode(code) {
         lastCode = code;
     }
 
-    scannedCodes.splice(0, 0, { code: code, scanned: new Date().toISOString(), scanCount: 1 });
+    scannedCodes.splice(0, 0, { code: code, scanned: new Date().toISOString() });
 
     saveCodes();
     drawCodes();
@@ -134,7 +132,7 @@ function importCodesFromClipboard() {
 
         const lines = clipboardContent.split(/\r|\n/).filter(n => n);
         for (let i = 0; i < lines.length; i++) {
-            scannedCodes.push({ code: lines[i].trim(), scanned: new Date().toISOString(), scanCount: 1 });
+            scannedCodes.push({ code: lines[i].trim(), scanned: new Date().toISOString() });
         }
 
         saveCodes();
